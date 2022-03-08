@@ -91,7 +91,6 @@ namespace blebox.Forms
             this.panel2 = new System.Windows.Forms.Panel();
             this.panel1 = new System.Windows.Forms.Panel();
             this.infoToolTip = new System.Windows.Forms.ToolTip(this.components);
-            this.timerGet = new System.Windows.Forms.Timer(this.components);
             this.timerPost = new System.Windows.Forms.Timer(this.components);
             ((System.ComponentModel.ISupportInitialize)(this.channel1TrackBar)).BeginInit();
             this.channel1Panel.SuspendLayout();
@@ -868,11 +867,6 @@ namespace blebox.Forms
             this.panel1.Size = new System.Drawing.Size(600, 15);
             this.panel1.TabIndex = 2;
             // 
-            // timerGet
-            // 
-            this.timerGet.Interval = 10000;
-            this.timerGet.Tick += new System.EventHandler(this.TimerGet_Tick);
-            // 
             // timerPost
             // 
             this.timerPost.Tick += new System.EventHandler(this.TimerPost_Tick);
@@ -935,7 +929,6 @@ namespace blebox.Forms
         private System.Windows.Forms.PictureBox logoPictureBox;
         private System.Windows.Forms.Panel mainPanel;
         private System.Windows.Forms.ToolTip infoToolTip;
-        private System.Windows.Forms.Timer timerGet;
         private System.Windows.Forms.Label channel1ValueLabel;
         private System.Windows.Forms.Label channel1Label;
         private System.Windows.Forms.Panel channel5Panel;

@@ -24,6 +24,7 @@ namespace blebox.Forms
             InitializeComponent();
             infoToolTip.SetToolTip(closeLabel, "Zamknij");
             ControlState = new ControlState();
+            timerPost.Start();
         }
 
         #region MoveFormWithoutBorder
@@ -55,46 +56,17 @@ namespace blebox.Forms
         {
             try
             {
-                //Task task = GetAsync();
-                //task.Wait();
                 var state = await httpClient.GetStringAsync(Url + "/api/rgbw/state");
                 ControlState = new ControlState(state);
                 SetFormControlsLikeControlState();
                 connectionStatusLabel.Text = "OK";
                 connectionStatusLabel.ForeColor = Color.Green;
-                //timerGet.Start();
-                timerPost.Start();
             }
             catch (Exception)
             {
                 MessageBox.Show("Brak połączenia ze sterownikiem.",
                     "Błąd", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-        }
-
-        private void TimerGet_Tick(object sender, EventArgs e)
-        {
-            if (!threadGet.IsAlive)
-            {
-                threadGet = new Thread(() => GetAsync());
-                threadGet.Start();
-            }
-        }
-        private void TimerPost_Tick(object sender, EventArgs e)
-        {
-            if (!threadPost.IsAlive && postWait && !settingsInProgress)
-            {
-                postWait = false;
-                threadPost = new Thread(() => PostAsync());
-                threadPost.Start();
-            }
-        }
-
-        private async Task GetAsync()
-        {
-            var state = await httpClient.GetStringAsync(Url + "/api/rgbw/state");
-            ControlState = new ControlState(state);
-            SetFormControlsLikeControlState();
         }
 
         private void SetFormControlsLikeControlState()
@@ -114,22 +86,42 @@ namespace blebox.Forms
                 string channel5 = desiredColor.Substring(8, 2);
                 channel1TrackBar.Value = int.Parse(channel5, System.Globalization.NumberStyles.HexNumber);
             }
-            catch 
-            { 
+            catch
+            {
                 //work only with wLightBox v.3 (RGBWW)
             }
             settingsInProgress = false;
+        }
+
+        private void TimerPost_Tick(object sender, EventArgs e)
+        {
+            if (!threadPost.IsAlive && postWait && !settingsInProgress)
+            {
+                postWait = false;
+                threadPost = new Thread(() => PostAsync());
+                threadPost.Start();
+            }
         }
 
         private async Task PostAsync()
         {
             string json = JsonConvert.SerializeObject(ControlState);
             var data = new StringContent(json, Encoding.UTF8, "application/json");
-            var response = await httpClient.PostAsync(Url + "/api/rgbw/set", data);
-            string result = response.Content.ReadAsStringAsync().Result;
-            Console.WriteLine(result);
+            await httpClient.PostAsync(Url + "/api/rgbw/set", data);
         }
 
+        private void SetDesiredColor(string desiredColor)
+        {
+            try
+            {
+                ControlState.Rgbw.DesiredColor = desiredColor;
+                postWait = true;
+            }
+            catch
+            {
+                //desiredColor.Length do not work on wLightBox v.2
+            }
+        }
 
         #region RGBWW
         private void Channel1TrackBar_ValueChanged(object sender, EventArgs e)
@@ -183,63 +175,7 @@ namespace blebox.Forms
         }
         #endregion
 
-        #region Effects
-        private void NoneButton_Click(object sender, EventArgs e)
-        {
-            ControlState.Rgbw.EffectID = EffectNames.NONE;
-            postWait = true;
-        }
-
-        private void FadeButton_Click(object sender, EventArgs e)
-        {
-            ControlState.Rgbw.EffectID = EffectNames.FADE;
-            postWait = true;
-        }
-
-        private void RgbButton_Click(object sender, EventArgs e)
-        {
-            ControlState.Rgbw.EffectID = EffectNames.RGB;
-            postWait = true;
-        }
-
-        private void PoliceButton_Click(object sender, EventArgs e)
-        {
-            ControlState.Rgbw.EffectID = EffectNames.POLICE;
-            postWait = true;
-        }
-
-        private void RelaxButton_Click(object sender, EventArgs e)
-        {
-            ControlState.Rgbw.EffectID = EffectNames.RELAX;
-            postWait = true;
-        }
-
-        private void StroboButton_Click(object sender, EventArgs e)
-        {
-            ControlState.Rgbw.EffectID = EffectNames.STROBO;
-            postWait = true;
-        }
-
-        private void BellButton_Click(object sender, EventArgs e)
-        {
-            ControlState.Rgbw.EffectID = EffectNames.BELL;
-            postWait = true;
-        }
-        #endregion
-
-        private void SetDesiredColor(string desiredColor)
-        {
-            try
-            {
-                ControlState.Rgbw.DesiredColor = desiredColor;
-                postWait = true;
-            }
-            catch
-            {
-                //desiredColor.Length do not work on wLightBox v.2
-            }
-        }
-
+        #region FavColors
         private void RedButton_Click(object sender, EventArgs e)
         {
             SetDesiredColor(FavColors.RED);
@@ -294,6 +230,50 @@ namespace blebox.Forms
         {
             SetDesiredColor(FavColors.AZURE);
         }
+        #endregion
+
+        private void SetEffectID(EffectNames effectNames)
+        {
+            ControlState.Rgbw.EffectID = effectNames;
+            postWait = true;
+        }
+
+        #region Effects
+        private void NoneButton_Click(object sender, EventArgs e)
+        {
+            SetEffectID(EffectNames.NONE);
+        }
+
+        private void FadeButton_Click(object sender, EventArgs e)
+        {
+            SetEffectID(EffectNames.FADE);
+        }
+
+        private void RgbButton_Click(object sender, EventArgs e)
+        {
+            SetEffectID(EffectNames.RGB);
+        }
+
+        private void PoliceButton_Click(object sender, EventArgs e)
+        {
+            SetEffectID(EffectNames.POLICE);
+        }
+
+        private void RelaxButton_Click(object sender, EventArgs e)
+        {
+            SetEffectID(EffectNames.RELAX);
+        }
+
+        private void StroboButton_Click(object sender, EventArgs e)
+        {
+            SetEffectID(EffectNames.STROBO);
+        }
+
+        private void BellButton_Click(object sender, EventArgs e)
+        {
+            SetEffectID(EffectNames.BELL);
+        }
+        #endregion
 
     }
 }
